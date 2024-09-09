@@ -57,6 +57,8 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define CUSTOM_HID_EPIN_SIZE 64
+#define CUSTOM_HID_EPOUT_SIZE 64
 #define PB_BLUE_Pin GPIO_PIN_13
 #define PB_BLUE_GPIO_Port GPIOC
 #define MCO_Pin GPIO_PIN_0
