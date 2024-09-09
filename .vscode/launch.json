@@ -1,0 +1,22 @@
+{
+    "version": "2.0.0",
+    "configurations": [
+        {
+            "cwd": "${workspaceRoot}",
+            "executable": "./build/Debug/MS_Sidestick.elf",
+            "name": "Debug with OpenOCD",
+            "request": "launch",
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            "configFiles": [
+                "interface/stlink.cfg",
+                "target/stm32f4x.cfg"
+            ],
+            "searchDir": [],
+            "runToEntryPoint": "main",
+            "showDevDebugOutput": "both",
+            "device": "STM32F413ZH",
+            "svdFile": "./STM32F413.svd"
+        }
+    ]
+}
