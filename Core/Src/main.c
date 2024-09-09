@@ -301,10 +301,12 @@ void StartDefaultTask(void *argument)
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
+  UNUSED(argument);
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    HAL_GPIO_TogglePin(LED_G_GPIO_Port, LED_G_Pin);
+    osDelay(500);
   }
   /* USER CODE END 5 */
 }
