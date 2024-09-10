@@ -1,5 +1,12 @@
 {
     "files.associations": {
-        "game_controller.h": "c"
+        "game_controller.h": "c",
+        "usbd_customhid.h": "c",
+        "usbd_custom_hid_if.h": "c",
+        "usbd_core.h": "c",
+        "usbd_desc.h": "c",
+        "usbd_def.h": "c",
+        "usbd_conf.h": "c",
+        "stm32f4xx.h": "c"
     }
 }
