@@ -386,6 +386,10 @@ void StartDefaultTask(void *argument)
   {
     HAL_GPIO_TogglePin(LED_G_GPIO_Port, LED_G_Pin);
     osDelay(500);
+    //XXX test
+    uint8_t data[7];
+    HAL_I2C_Mem_Read(&hi2c2, 0x3C, 0x0F, I2C_MEMADD_SIZE_8BIT, data, 6, 100);
+    data[6]++;
   }
   /* USER CODE END 5 */
 }
