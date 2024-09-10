@@ -19,6 +19,12 @@ void gameControllerLoop(void)
         joyReport.X = i16;
         joyReport.Y = i16;
         joyReport.Z = i16;
+        joyReport.Rz = i16;
+        uint16_t u16 = (step % 10) * 3276;
+        joyReport.Rx = u16;
+        joyReport.Ry = u16;
+        joyReport.slider = u16;
+        joyReport.dial = u16;
         joyReport.HAT = (step % 8) + 1;
         joyReport.buttons = 1 << (step % 32);
         step++;
