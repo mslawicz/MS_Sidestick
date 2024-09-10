@@ -23,7 +23,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "game_controller.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -51,6 +51,13 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for gameController */
+osThreadId_t gameControllerHandle;
+const osThreadAttr_t gameController_attributes = {
+  .name = "gameController",
+  .stack_size = 256 * 4,
+  .priority = (osPriority_t) osPriorityNormal1,
+};
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -60,6 +67,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART3_UART_Init(void);
 void StartDefaultTask(void *argument);
+void startGameController(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -126,6 +134,9 @@ int main(void)
   /* Create the thread(s) */
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+
+  /* creation of gameController */
+  gameControllerHandle = osThreadNew(startGameController, NULL, &gameController_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -309,6 +320,23 @@ void StartDefaultTask(void *argument)
     osDelay(500);
   }
   /* USER CODE END 5 */
+}
+
+/* USER CODE BEGIN Header_startGameController */
+/**
+* @brief Function implementing the gameController thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_startGameController */
+void startGameController(void *argument)
+{
+  /* USER CODE BEGIN startGameController */
+  UNUSED(argument);
+  /* call game controller infinite loop */
+  gameControllerLoop();
+  /* this line is never reached */
+  /* USER CODE END startGameController */
 }
 
 /**
