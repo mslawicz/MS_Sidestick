@@ -100,6 +100,7 @@
 extern I2C_HandleTypeDef* pIMU_I2C;
 
 void IMU_init(void);
+void IMU_AG_readRequest(void);
 
 #ifdef __cplusplus
 }

@@ -382,7 +382,20 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+/**
+  * @brief  EXTI line detection callbacks.
+  * @param  GPIO_Pin Specifies the pins connected EXTI line
+  * @retval None
+  */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  if(INT1_A_G_Pin == GPIO_Pin)
+  {
+    /* interrupt from IMU A/G */
+    IMU_AG_readRequest();
+    /* on transfer complete the function HAL_I2C_MemRxCpltCallback will be called */
+  }
+}
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */

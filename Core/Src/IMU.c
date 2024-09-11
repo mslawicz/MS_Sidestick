@@ -13,7 +13,6 @@ static uint8_t IMU_AG_rxBuf[IMU_AG_BUF_SIZE];   //rx buffer for IMU A/G raw data
 static uint8_t IMU_M_rxBuf[IMU_M_BUF_SIZE];     //rx buffer for IMU M raw data
 static volatile bool IMU_AG_transferActive = false;     //flag indicating IMU A/G transfer phase
 
-void IMU_AG_readRequest(void);
 void IMU_M_readRequest(void);
 
 void IMU_init(void)
@@ -129,9 +128,6 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
   if(pIMU_I2C == hi2c)
   {
-    HAL_GPIO_WritePin(TEST1_GPIO_Port, TEST1_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(TEST1_GPIO_Port, TEST1_Pin, GPIO_PIN_RESET);
-
     if(IMU_AG_transferActive)
     {
         /* callback on IMU A/G transfer complete - continue with IMU M transfer */
