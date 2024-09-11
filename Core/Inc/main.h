@@ -61,6 +61,8 @@ void Error_Handler(void);
 #define CUSTOM_HID_EPOUT_SIZE 64
 #define PB_BLUE_Pin GPIO_PIN_13
 #define PB_BLUE_GPIO_Port GPIOC
+#define TEST1_Pin GPIO_PIN_2
+#define TEST1_GPIO_Port GPIOF
 #define MCO_Pin GPIO_PIN_0
 #define MCO_GPIO_Port GPIOH
 #define LED_G_Pin GPIO_PIN_0

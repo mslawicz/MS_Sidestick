@@ -319,6 +319,9 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(TEST1_GPIO_Port, TEST1_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, LED_G_Pin|LED_R_Pin|LED_B_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
@@ -329,6 +332,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(PB_BLUE_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : TEST1_Pin */
+  GPIO_InitStruct.Pin = TEST1_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(TEST1_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LED_G_Pin LED_R_Pin LED_B_Pin */
   GPIO_InitStruct.Pin = LED_G_Pin|LED_R_Pin|LED_B_Pin;
@@ -388,7 +398,9 @@ void StartDefaultTask(void *argument)
     osDelay(500);
     //XXX test
     uint8_t data[7];
+    HAL_GPIO_WritePin(TEST1_GPIO_Port, TEST1_Pin, GPIO_PIN_SET);
     HAL_I2C_Mem_Read(&hi2c2, 0x3C, 0x0F, I2C_MEMADD_SIZE_8BIT, data, 6, 100);
+    HAL_GPIO_WritePin(TEST1_GPIO_Port, TEST1_Pin, GPIO_PIN_RESET);
     data[6]++;
   }
   /* USER CODE END 5 */
