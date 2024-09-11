@@ -14,6 +14,17 @@ static uint8_t IMU_AG_rxBuf[IMU_AG_BUF_SIZE];   //rx buffer for IMU A/G raw data
 static uint8_t IMU_M_rxBuf[IMU_M_BUF_SIZE];     //rx buffer for IMU M raw data
 static volatile bool IMU_AG_transferActive = false;     //flag indicating IMU A/G transfer phase
 
+//XXX monitor variables
+int16_t global_acc_X;
+int16_t global_acc_Y;
+int16_t global_acc_Z;
+int16_t global_g_X;
+int16_t global_g_Y;
+int16_t global_g_Z;
+int16_t global_m_X;
+int16_t global_m_Y;
+int16_t global_m_Z;
+
 void IMU_M_readRequest(void);
 
 void IMU_init(void)
@@ -28,7 +39,7 @@ void IMU_init(void)
     {
         0x69,   //CTRL_REG1_G: ODR 119 Hz, 500 dps, LPF 31 Hz 
         0x00,
-        0x46    //CTRL_REG3_G: HPF 0.1 Hz
+        0x47    //CTRL_REG3_G: HPF 0.05 Hz
     };
 
     const uint8_t Cfg_CTRL_REG6_XL[] =
@@ -39,7 +50,7 @@ void IMU_init(void)
     const uint8_t Cfg_CTRL_REG1_M[] =
     {
         0x5C,   //CTRL_REG1_M: High-performance mode, ODR 80 Hz
-        0x00,   //CTRL_REG2_M: +-4 gauss
+        0x60,   //CTRL_REG2_M: +-16 gauss
         0x00,   //CTRL_REG3_M: continuous-conversion mode
         0x08    //CTRL_REG4_M: Z axis high performance mode, little endian
     };      
@@ -134,6 +145,17 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
         /* callback on IMU A/G transfer complete - continue with IMU M transfer */
         IMU_M_readRequest();
         IMU_AG_transferActive = false;
+
+        //XXX monitor variables
+        global_acc_X = *(int16_t*)(IMU_AG_rxBuf + 6);
+        global_acc_Y = *(int16_t*)(IMU_AG_rxBuf + 8);
+        global_acc_Z = *(int16_t*)(IMU_AG_rxBuf + 10);
+        global_g_X = *(int16_t*)(IMU_AG_rxBuf + 0);
+        global_g_Y = *(int16_t*)(IMU_AG_rxBuf + 2);
+        global_g_Z = *(int16_t*)(IMU_AG_rxBuf + 4);        
+        global_m_X = *(int16_t*)(IMU_M_rxBuf + 0);
+        global_m_Y = *(int16_t*)(IMU_M_rxBuf + 2);
+        global_m_Z = *(int16_t*)(IMU_M_rxBuf + 4);         
     }
     else
     {
