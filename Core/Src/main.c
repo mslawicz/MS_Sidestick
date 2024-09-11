@@ -23,6 +23,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "logger.h"
 #include "game_controller.h"
 /* USER CODE END Includes */
 
@@ -116,7 +117,8 @@ int main(void)
   MX_USART3_UART_Init();
   MX_I2C2_Init();
   /* USER CODE BEGIN 2 */
-
+  pLoggerUART = &huart3;
+  LOG_INFO("\rMS Sidestick v0.1");
   /* USER CODE END 2 */
 
   /* Init scheduler */
