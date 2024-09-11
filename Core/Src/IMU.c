@@ -64,7 +64,7 @@ void IMU_init(void)
     }
 
     /* check WHO_AM_I register of IMU M */
-    status = HAL_I2C_Mem_Read(pIMU_I2C, IMU_M_addr, WHO_AM_I_M, I2C_MEMADD_SIZE_8BIT, IMU_AG_rxBuf, 1, IMU_RX_TIMEOUT);
+    status = HAL_I2C_Mem_Read(pIMU_I2C, IMU_M_addr, WHO_AM_I_M, I2C_MEMADD_SIZE_8BIT, IMU_M_rxBuf, 1, IMU_RX_TIMEOUT);
     if(status)
     {
         LOG_ERROR("failed to read IMU M register with status=%u", status);
