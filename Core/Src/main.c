@@ -375,7 +375,20 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+/**
+  * @brief  Memory Rx Transfer completed callback.
+  * @param  hi2c Pointer to a I2C_HandleTypeDef structure that contains
+  *                the configuration information for the specified I2C.
+  * @retval None
+  */
+void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
+{
+  if(&hi2c2 == hi2c)
+  {
+    HAL_GPIO_WritePin(TEST1_GPIO_Port, TEST1_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(TEST1_GPIO_Port, TEST1_Pin, GPIO_PIN_RESET);
+  }
+}
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -399,7 +412,8 @@ void StartDefaultTask(void *argument)
     //XXX test
     uint8_t data[7];
     HAL_GPIO_WritePin(TEST1_GPIO_Port, TEST1_Pin, GPIO_PIN_SET);
-    HAL_I2C_Mem_Read(&hi2c2, 0x3C, 0x0F, I2C_MEMADD_SIZE_8BIT, data, 6, 100);
+    //HAL_I2C_Mem_Read(&hi2c2, 0x3C, 0x0F, I2C_MEMADD_SIZE_8BIT, data, 6, 100);
+    HAL_I2C_Mem_Read_DMA(&hi2c2, 0x3C, 0x0F, I2C_MEMADD_SIZE_8BIT, data, 6);
     HAL_GPIO_WritePin(TEST1_GPIO_Port, TEST1_Pin, GPIO_PIN_RESET);
     data[6]++;
   }
