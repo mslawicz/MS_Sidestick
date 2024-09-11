@@ -63,6 +63,11 @@ const osThreadAttr_t gameController_attributes = {
   .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityNormal1,
 };
+/* Definitions for gameCtrlEvents */
+osEventFlagsId_t gameCtrlEventsHandle;
+const osEventFlagsAttr_t gameCtrlEvents_attributes = {
+  .name = "gameCtrlEvents"
+};
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -155,6 +160,10 @@ int main(void)
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
+
+  /* Create the event(s) */
+  /* creation of gameCtrlEvents */
+  gameCtrlEventsHandle = osEventFlagsNew(&gameCtrlEvents_attributes);
 
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
@@ -414,7 +423,6 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    HAL_GPIO_TogglePin(LED_G_GPIO_Port, LED_G_Pin);
     osDelay(500);
   }
   /* USER CODE END 5 */

@@ -2,6 +2,7 @@
 #include "logger.h"
 #include "main.h"
 #include "stdint.h"
+#include "cmsis_os2.h"
 
 #define IMU_AG_BUF_SIZE 12
 #define IMU_M_BUF_SIZE  6
@@ -137,6 +138,7 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
     else
     {
         /* set IMU new data ready */
+        osEventFlagsSet(gameCtrlEventsHandle, IMU_DATA_READY_EVENT);
     }
   }
 }

@@ -31,7 +31,7 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "cmsis_os.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -53,7 +53,7 @@ extern "C" {
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
-
+extern osEventFlagsId_t gameCtrlEventsHandle;
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
@@ -100,7 +100,7 @@ void Error_Handler(void);
 #define LED_B_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
-
+#define IMU_DATA_READY_EVENT  1
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

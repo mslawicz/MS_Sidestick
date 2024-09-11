@@ -1,8 +1,9 @@
 #include "game_controller.h"
-#include "cmsis_os.h"
 #include "usbd_customhid.h"
 #include "usbd_custom_hid_if.h"
+#include "main.h"
 
+osEventFlagsId_t* pGameCtrlEventsHandle;
 JoyData_t joyReport = {0};
 
 /* game controller loop
@@ -14,20 +15,28 @@ void gameControllerLoop(void)
 
     while(1)
     {
-        osDelay(100);   //XXX test
-        int16_t i16 = -32767 + (step % 10) * 6553;
+        osEventFlagsWait(gameCtrlEventsHandle, IMU_DATA_READY_EVENT, osFlagsWaitAny, osWaitForever);
+
+        HAL_GPIO_WritePin(TEST1_GPIO_Port, TEST1_Pin, GPIO_PIN_SET);
+        int16_t i16 = -32767 + (step % 100) * 655;
         joyReport.X = i16;
         joyReport.Y = i16;
         joyReport.Z = i16;
         joyReport.Rz = i16;
-        uint16_t u16 = (step % 10) * 3276;
+        uint16_t u16 = (step % 100) * 327;
         joyReport.Rx = u16;
         joyReport.Ry = u16;
         joyReport.slider = u16;
         joyReport.dial = u16;
-        joyReport.HAT = (step % 8) + 1;
-        joyReport.buttons = 1 << (step % 32);
+        joyReport.HAT = ((step >> 4) % 8) + 1;
+        joyReport.buttons = 1 << ((step >> 4) % 32);
         step++;
         USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, (uint8_t*)&joyReport, sizeof(joyReport));
+        if((step % 60) == 0)
+        {
+            /* it should be executed roughly every half a second */
+            HAL_GPIO_TogglePin(LED_G_GPIO_Port, LED_G_Pin);
+        }
+        HAL_GPIO_WritePin(TEST1_GPIO_Port, TEST1_Pin, GPIO_PIN_RESET);
     }
 }  
