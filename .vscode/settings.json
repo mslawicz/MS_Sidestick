@@ -7,6 +7,7 @@
         "usbd_desc.h": "c",
         "usbd_def.h": "c",
         "usbd_conf.h": "c",
-        "stm32f4xx.h": "c"
+        "stm32f4xx.h": "c",
+        "main.h": "c"
     }
 }

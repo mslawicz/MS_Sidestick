@@ -25,6 +25,7 @@
 /* USER CODE BEGIN Includes */
 #include "logger.h"
 #include "game_controller.h"
+#include "IMU.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -118,7 +119,11 @@ int main(void)
   MX_I2C2_Init();
   /* USER CODE BEGIN 2 */
   pLoggerUART = &huart3;
+  pIMU_I2C = &hi2c2;
+  /* clear error LED */
+  HAL_GPIO_WritePin(LED_R_GPIO_Port, LED_R_Pin, GPIO_PIN_RESET);
   LOG_INFO("\rMS Sidestick v0.1");
+  IMU_init();
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -468,6 +473,7 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
+  HAL_GPIO_WritePin(LED_R_GPIO_Port, LED_R_Pin, GPIO_PIN_SET);
   __disable_irq();
   while (1)
   {

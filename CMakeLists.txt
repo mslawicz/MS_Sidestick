@@ -50,6 +50,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
     Core/Src/logger.c
     Core/Src/game_controller.c
+    Core/Src/IMU.c
 )
 
 # Add include paths
