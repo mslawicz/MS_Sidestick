@@ -11,6 +11,10 @@
 I2C_HandleTypeDef* pIMU_I2C;
 static uint8_t IMU_AG_rxBuf[IMU_AG_BUF_SIZE];   //rx buffer for IMU A/G raw data
 static uint8_t IMU_M_rxBuf[IMU_M_BUF_SIZE];     //rx buffer for IMU M raw data
+static volatile bool IMU_AG_transferActive = false;     //flag indicating IMU A/G transfer phase
+
+void IMU_AG_readRequest(void);
+void IMU_M_readRequest(void);
 
 void IMU_init(void)
 {
@@ -95,6 +99,48 @@ void IMU_init(void)
     else
     {
         LOG_INFO("IMU setup OK");
+        /* init the first IMU A/G readout */
+        IMU_AG_readRequest();
     }
 }
 
+/* request of DMA readout of IMU G (6 bytes) and A (6 bytes)
+    on transfer complete the HAL_I2C_MemRxCpltCallback is called */
+void IMU_AG_readRequest(void)
+{
+    HAL_I2C_Mem_Read_DMA(pIMU_I2C, IMU_AG_addr, OUT_X_L_G, I2C_MEMADD_SIZE_8BIT, IMU_AG_rxBuf, IMU_AG_BUF_SIZE);
+    IMU_AG_transferActive = true;
+}
+
+/* request of DMA readout of IMU M (6 bytes)
+    on transfer complete the HAL_I2C_MemRxCpltCallback is called */
+void IMU_M_readRequest(void)
+{
+    HAL_I2C_Mem_Read_DMA(pIMU_I2C, IMU_M_addr, OUT_X_L_M, I2C_MEMADD_SIZE_8BIT, IMU_M_rxBuf, IMU_M_BUF_SIZE);
+}
+
+/**
+  * @brief  Memory Rx Transfer completed callback.
+  * @param  hi2c Pointer to a I2C_HandleTypeDef structure that contains
+  *                the configuration information for the specified I2C.
+  * @retval None
+  */
+void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
+{
+  if(pIMU_I2C == hi2c)
+  {
+    HAL_GPIO_WritePin(TEST1_GPIO_Port, TEST1_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(TEST1_GPIO_Port, TEST1_Pin, GPIO_PIN_RESET);
+
+    if(IMU_AG_transferActive)
+    {
+        /* callback on IMU A/G transfer complete - continue with IMU M transfer */
+        IMU_M_readRequest();
+        IMU_AG_transferActive = false;
+    }
+    else
+    {
+        /* set IMU new data ready */
+    }
+  }
+}
