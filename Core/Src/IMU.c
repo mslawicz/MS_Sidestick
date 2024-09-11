@@ -3,12 +3,14 @@
 #include "main.h"
 #include "stdint.h"
 
-#define IMU_RX_BUF_SIZE 32
+#define IMU_AG_BUF_SIZE 12
+#define IMU_M_BUF_SIZE  6
 #define IMU_RX_TIMEOUT  10
 #define IMU_TX_TIMEOUT  20
 
 I2C_HandleTypeDef* pIMU_I2C;
-static uint8_t rxBuf[IMU_RX_BUF_SIZE];
+static uint8_t IMU_AG_rxBuf[IMU_AG_BUF_SIZE];   //rx buffer for IMU A/G raw data
+static uint8_t IMU_M_rxBuf[IMU_M_BUF_SIZE];     //rx buffer for IMU M raw data
 
 void IMU_init(void)
 {
@@ -39,7 +41,7 @@ void IMU_init(void)
     };      
 
     /* check WHO_AM_I register of IMU A/G */
-    status = HAL_I2C_Mem_Read(pIMU_I2C, IMU_AG_addr, WHO_AM_I_XG, I2C_MEMADD_SIZE_8BIT, rxBuf, 1, IMU_RX_TIMEOUT);
+    status = HAL_I2C_Mem_Read(pIMU_I2C, IMU_AG_addr, WHO_AM_I_XG, I2C_MEMADD_SIZE_8BIT, IMU_AG_rxBuf, 1, IMU_RX_TIMEOUT);
     if(status)
     {
         LOG_ERROR("failed to read IMU A/G register with status=%u", status);
@@ -47,18 +49,18 @@ void IMU_init(void)
     }
     else
     {
-        if(rxBuf[0] == WHO_AM_I_AG_RSP)
+        if(IMU_AG_rxBuf[0] == WHO_AM_I_AG_RSP)
         {
             LOG_INFO("IMU AG response OK");
         }
         else
         {
-            LOG_WARNING("IMU A/G invalid WHO_AM_I response=0x%02X", rxBuf[0]);
+            LOG_WARNING("IMU A/G invalid WHO_AM_I response=0x%02X", IMU_AG_rxBuf[0]);
         }
     }
 
     /* check WHO_AM_I register of IMU M */
-    status = HAL_I2C_Mem_Read(pIMU_I2C, IMU_M_addr, WHO_AM_I_M, I2C_MEMADD_SIZE_8BIT, rxBuf, 1, IMU_RX_TIMEOUT);
+    status = HAL_I2C_Mem_Read(pIMU_I2C, IMU_M_addr, WHO_AM_I_M, I2C_MEMADD_SIZE_8BIT, IMU_AG_rxBuf, 1, IMU_RX_TIMEOUT);
     if(status)
     {
         LOG_ERROR("failed to read IMU M register with status=%u", status);
@@ -66,13 +68,13 @@ void IMU_init(void)
     }
     else
     {
-        if(rxBuf[0] == WHO_AM_I_M_RSP)
+        if(IMU_M_rxBuf[0] == WHO_AM_I_M_RSP)
         {
             LOG_INFO("IMU M response OK");
         }
         else
         {
-            LOG_WARNING("IMU M invalid WHO_AM_I response=0x%02X", rxBuf[0]);
+            LOG_WARNING("IMU M invalid WHO_AM_I response=0x%02X", IMU_M_rxBuf[0]);
         }
     }    
 
@@ -95,3 +97,4 @@ void IMU_init(void)
         LOG_INFO("IMU setup OK");
     }
 }
+
