@@ -18,8 +18,10 @@ void gameControllerLoop(void)
     int16_XYZ_t IMU_M_rawData;  // IMU magnetometer raw data
     static const float IMU_G_toRadPerSec = 2.6632423658e-4f;
     static const float IMU_A_toG = 3.0518509476e-5f;
+    static const float IMU_M_toGauss = 4.882961516e-4f;
     float_XYZ_t stickAngularRate;   //stick angular rate in rad/s
     float_XYZ_t stickAcceleration;  // stick acceleration in G */
+    float_XYZ_t stickMagnFluxDens;  // stick magnetic flux density in gauss */
 
     /* IMU timer will call the first IMU readout */
     start_IMU_timer();
@@ -54,11 +56,17 @@ void gameControllerLoop(void)
         stickAngularRate.Y = IMU_G_rawData.Y * IMU_G_toRadPerSec;
         stickAngularRate.Z = IMU_G_rawData.Z * IMU_G_toRadPerSec;
 
-        /* stick acceleration [G] = val / 0x7FFF * 2 */
+        /* stick acceleration [G] = val / 0x7FFF * 2 G */
         /* stick acceleration [G] = val * 3.0518509476e-5 */
         stickAcceleration.X = IMU_A_rawData.X * IMU_A_toG;
         stickAcceleration.Y = IMU_A_rawData.Y * IMU_A_toG;
         stickAcceleration.Z = IMU_A_rawData.Z * IMU_A_toG;
+
+        /* stick magnetic flux density [gauss] = val / 0x7FFF * 16 gauss */
+        /* stick magnetic flux density [gauss] = val * 4.882961516e-4 */
+        stickMagnFluxDens.X = IMU_M_rawData.X * IMU_M_toGauss;
+        stickMagnFluxDens.Y = IMU_M_rawData.Y * IMU_M_toGauss;
+        stickMagnFluxDens.Z = IMU_M_rawData.Z * IMU_M_toGauss;
 
         HAL_GPIO_WritePin(TEST1_GPIO_Port, TEST1_Pin, GPIO_PIN_SET);
         int16_t i16 = -32767 + (step % 100) * 655;
