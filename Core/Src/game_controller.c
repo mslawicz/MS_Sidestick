@@ -3,6 +3,7 @@
 #include "usbd_custom_hid_if.h"
 #include "main.h"
 #include "IMU.h"
+#include "convert.h"
 
 osEventFlagsId_t* pGameCtrlEventsHandle;
 JoyData_t joyReport = {0};
@@ -70,8 +71,8 @@ void gameControllerLoop(void)
 
         HAL_GPIO_WritePin(TEST1_GPIO_Port, TEST1_Pin, GPIO_PIN_SET);
         int16_t i16 = -32767 + (step % 100) * 655;
-        joyReport.X = i16;
-        joyReport.Y = i16;
+        joyReport.X = (int16_t)scale(-32768.0f, 32768.0f, i16, 0, 25000.0f);
+        joyReport.Y = (int16_t)scale(-32768.0f, 32768.0f, i16, -17000.0f, 5000.0f);
         joyReport.Z = i16;
         joyReport.Rz = i16;
         uint16_t u16 = (step % 100) * 327;
