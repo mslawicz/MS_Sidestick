@@ -4,6 +4,7 @@
 #include "main.h"
 #include "IMU.h"
 #include "convert.h"
+#include <math.h>
 
 osEventFlagsId_t* pGameCtrlEventsHandle;
 JoyData_t joyReport = {0};
@@ -13,16 +14,19 @@ JoyData_t joyReport = {0};
     for the host and sends the appriopriate report */
 void gameControllerLoop(void)
 {
+    static const float IMU_G_resolution = 2.6632423658e-4f;     //rad/s/1 bit
+    static const float IMU_A_resolution = 6.1037018952e-5f;     //G/1 bit
+    static const float IMU_M_resolution = 4.882961516e-4f;      //gauss/1 bit
+    static const float PI_3 = 1.04719755f;      // PI/3 (60 deg)
+    static const float PI_2 = 1.5707963268f;  // PI/2
+    static const float Max15bit = 32767.0f;    //max 15-bit value in float type
     uint16_t step = 0;
     int16_XYZ_t IMU_G_rawData;  // IMU gyroscope raw data
     int16_XYZ_t IMU_A_rawData;  // IMU accelerometer raw data
     int16_XYZ_t IMU_M_rawData;  // IMU magnetometer raw data
-    static const float IMU_G_toRadPerSec = 2.6632423658e-4f;
-    static const float IMU_A_toG = 6.1037018952e-5f;
-    static const float IMU_M_toGauss = 4.882961516e-4f;
-    float_XYZ_t stickAngularRate;   //stick angular rate in rad/s
-    float_XYZ_t stickAcceleration;  // stick acceleration in G */
-    float_XYZ_t stickMagnFluxDens;  // stick magnetic flux density in gauss */
+    float_XYZ_t sensorAngularRate;   //sensor angular rate in rad/s
+    float_XYZ_t sensorAcceleration;  // sensor acceleration in G */
+    float_XYZ_t sensorMagnFluxDens;  // sensor magnetic flux density in gauss */
 
     /* IMU timer will call the first IMU readout */
     start_IMU_timer();
@@ -33,6 +37,7 @@ void gameControllerLoop(void)
 
         /* restart IMU timer to prevent additional readouts if IMU interrupts come on time */
         start_IMU_timer();
+        HAL_GPIO_WritePin(TEST1_GPIO_Port, TEST1_Pin, GPIO_PIN_SET);    //XXX test
 
         /* read IMU data from its buffers */
         /* gyroscope full scale +- 500 deg/s */
@@ -51,30 +56,35 @@ void gameControllerLoop(void)
         IMU_M_rawData.Z = *(int16_t*)(IMU_M_rxBuf + 4); 
 
         /* convert IMU data to real values */
-        /* stick angular rate [rad/s] = val / 0x7FFF * 500 deg/s / 360 deg * 2*PI */
-        /* stick angular rate [rad/s] = val *  2.6632423658e-4 */
-        stickAngularRate.X = IMU_G_rawData.X * IMU_G_toRadPerSec;
-        stickAngularRate.Y = IMU_G_rawData.Y * IMU_G_toRadPerSec;
-        stickAngularRate.Z = IMU_G_rawData.Z * IMU_G_toRadPerSec;
+        /* sensor angular rate [rad/s] = val / 0x7FFF * 500 deg/s / 360 deg * 2*PI */
+        /* sensor angular rate [rad/s] = val *  2.6632423658e-4 */
+        sensorAngularRate.X = IMU_G_rawData.X * IMU_G_resolution;
+        sensorAngularRate.Y = IMU_G_rawData.Y * IMU_G_resolution;
+        sensorAngularRate.Z = IMU_G_rawData.Z * IMU_G_resolution;
 
-        /* stick acceleration [G] = val / 0x7FFF * 2 G */
-        /* stick acceleration [G] = val * 6.1037018952e-5 */
-        stickAcceleration.X = IMU_A_rawData.X * IMU_A_toG;
-        stickAcceleration.Y = IMU_A_rawData.Y * IMU_A_toG;
-        stickAcceleration.Z = IMU_A_rawData.Z * IMU_A_toG;
+        /* sensor acceleration [G] = val / 0x7FFF * 2 G */
+        /* sensor acceleration [G] = val * 6.1037018952e-5 */
+        sensorAcceleration.X = IMU_A_rawData.X * IMU_A_resolution;
+        sensorAcceleration.Y = IMU_A_rawData.Y * IMU_A_resolution;
+        sensorAcceleration.Z = IMU_A_rawData.Z * IMU_A_resolution;
 
-        /* stick magnetic flux density [gauss] = val / 0x7FFF * 16 gauss */
-        /* stick magnetic flux density [gauss] = val * 4.882961516e-4 */
-        stickMagnFluxDens.X = IMU_M_rawData.X * IMU_M_toGauss;
-        stickMagnFluxDens.Y = IMU_M_rawData.Y * IMU_M_toGauss;
-        stickMagnFluxDens.Z = IMU_M_rawData.Z * IMU_M_toGauss;
+        /* sensor magnetic flux density [gauss] = val / 0x7FFF * 16 gauss */
+        /* sensor magnetic flux density [gauss] = val * 4.882961516e-4 */
+        sensorMagnFluxDens.X = IMU_M_rawData.X * IMU_M_resolution;
+        sensorMagnFluxDens.Y = IMU_M_rawData.Y * IMU_M_resolution;
+        sensorMagnFluxDens.Z = IMU_M_rawData.Z * IMU_M_resolution;
 
-        HAL_GPIO_WritePin(TEST1_GPIO_Port, TEST1_Pin, GPIO_PIN_SET);
+        /* calculate sensor yaw from sensor magnetic flux density [rad] */
+        static const float sensorYawGain = 0.42f;    //experimentally adjusted for real angles
+        float sensorYaw = sensorYawGain * atan2f(sensorMagnFluxDens.Z, -sensorMagnFluxDens.X);
+
+
         int16_t i16 = -32767 + (step % 100) * 655;
         joyReport.X = (int16_t)scale(-32768.0f, 32768.0f, i16, 0, 25000.0f);
         joyReport.Y = (int16_t)scale(-32768.0f, 32768.0f, i16, -17000.0f, 5000.0f);
         joyReport.Z = i16;
-        joyReport.Rz = i16;
+        /* sensor yaw in -PI/3 ... PI/3 range */
+        joyReport.Rz = (int16_t)scale(-PI_3, PI_3, sensorYaw, -Max15bit, Max15bit);   //TODO it should be replaced with calibrated stick yaw
         uint16_t u16 = (step % 100) * 327;
         joyReport.Rx = u16;
         joyReport.Ry = u16;
@@ -89,6 +99,6 @@ void gameControllerLoop(void)
             /* it should be executed roughly every half a second */
             HAL_GPIO_TogglePin(LED_G_GPIO_Port, LED_G_Pin);
         }
-        HAL_GPIO_WritePin(TEST1_GPIO_Port, TEST1_Pin, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(TEST1_GPIO_Port, TEST1_Pin, GPIO_PIN_RESET);  //XXX test
     }
 }  
