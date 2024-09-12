@@ -16,6 +16,8 @@ void gameControllerLoop(void)
     int16_XYZ_t IMU_G_rawData;  // IMU gyroscope raw data
     int16_XYZ_t IMU_A_rawData;  // IMU accelerometer raw data
     int16_XYZ_t IMU_M_rawData;  // IMU magnetometer raw data
+    static const float IMU_G_toRadPerSec = 2.6632423658e-4f;
+    float_XYZ_t stickAngularRate;   //stick angular rate in rad/s
 
     /* IMU timer will call the first IMU readout */
     start_IMU_timer();
@@ -28,7 +30,7 @@ void gameControllerLoop(void)
         start_IMU_timer();
 
         /* read IMU data from its buffers */
-        /* gyroscope full scale +- 500 deg/sec */
+        /* gyroscope full scale +- 500 deg/s */
         IMU_G_rawData.X = *(int16_t*)(IMU_AG_rxBuf);
         IMU_G_rawData.Y = *(int16_t*)(IMU_AG_rxBuf + 2);
         IMU_G_rawData.Z = *(int16_t*)(IMU_AG_rxBuf + 4);
@@ -41,7 +43,14 @@ void gameControllerLoop(void)
         /* magnetometer full scale +- 16 gauss */
         IMU_M_rawData.X = *(int16_t*)(IMU_M_rxBuf);
         IMU_M_rawData.Y = *(int16_t*)(IMU_M_rxBuf + 2);
-        IMU_M_rawData.Z = *(int16_t*)(IMU_M_rxBuf + 4);        
+        IMU_M_rawData.Z = *(int16_t*)(IMU_M_rxBuf + 4); 
+
+        /* convert IMU data to real values */
+        /* G [rad/s] = val / 0x7FFF * 500 deg/s / 360 deg * 2*PI */
+        /* G [rad/s] = val *  2.6632423658e-4 */
+        stickAngularRate.X = IMU_G_rawData.X * IMU_G_toRadPerSec;
+        stickAngularRate.Y = IMU_G_rawData.Y * IMU_G_toRadPerSec;
+        stickAngularRate.Z = IMU_G_rawData.Z * IMU_G_toRadPerSec;
 
         HAL_GPIO_WritePin(TEST1_GPIO_Port, TEST1_Pin, GPIO_PIN_SET);
         int16_t i16 = -32767 + (step % 100) * 655;
