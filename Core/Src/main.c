@@ -390,8 +390,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   if(INT1_A_G_Pin == GPIO_Pin)
   {
     /* interrupt from IMU A/G */
-    IMU_AG_readRequest();
-    /* on transfer complete the function HAL_I2C_MemRxCpltCallback will be called */
+    if(!IMU_transferActive)
+    {
+      /* do not start IMU readout if the previous one is still ongoing */
+      IMU_AG_readRequest();
+      /* the function HAL_I2C_MemRxCpltCallback will be called on transfer complete */
+    }
   }
 }
 /* USER CODE END 4 */

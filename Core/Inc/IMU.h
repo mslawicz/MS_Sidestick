@@ -2,6 +2,7 @@
 #define __IMU_H
 
 #include "stm32f4xx_hal.h"
+#include "stdbool.h"
 
 #ifdef __cplusplus
  extern "C" {
@@ -98,6 +99,7 @@
 #define WHO_AM_I_M_RSP      0x3D
 
 extern I2C_HandleTypeDef* pIMU_I2C;
+extern volatile bool IMU_transferActive;     //flag indicating IMU transfer is ongoing
 
 void IMU_init(void);
 void IMU_AG_readRequest(void);

@@ -13,6 +13,7 @@ I2C_HandleTypeDef* pIMU_I2C;
 static uint8_t IMU_AG_rxBuf[IMU_AG_BUF_SIZE];   //rx buffer for IMU A/G raw data
 static uint8_t IMU_M_rxBuf[IMU_M_BUF_SIZE];     //rx buffer for IMU M raw data
 static volatile bool IMU_AG_transferActive = false;     //flag indicating IMU A/G transfer phase
+volatile bool IMU_transferActive = false;     //flag indicating IMU transfer is ongoing
 
 //XXX monitor variables
 int16_t global_acc_X;
@@ -119,6 +120,7 @@ void IMU_init(void)
     on transfer complete the HAL_I2C_MemRxCpltCallback is called */
 void IMU_AG_readRequest(void)
 {
+    IMU_transferActive = true;
     HAL_I2C_Mem_Read_DMA(pIMU_I2C, IMU_AG_addr, OUT_X_L_G, I2C_MEMADD_SIZE_8BIT, IMU_AG_rxBuf, IMU_AG_BUF_SIZE);
     IMU_AG_transferActive = true;
 }
@@ -127,6 +129,7 @@ void IMU_AG_readRequest(void)
     on transfer complete the HAL_I2C_MemRxCpltCallback is called */
 void IMU_M_readRequest(void)
 {
+    IMU_transferActive = true;
     HAL_I2C_Mem_Read_DMA(pIMU_I2C, IMU_M_addr, OUT_X_L_M, I2C_MEMADD_SIZE_8BIT, IMU_M_rxBuf, IMU_M_BUF_SIZE);
 }
 
@@ -138,6 +141,7 @@ void IMU_M_readRequest(void)
   */
 void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
+  IMU_transferActive = false;
   if(pIMU_I2C == hi2c)
   {
     if(IMU_AG_transferActive)
