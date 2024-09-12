@@ -4,15 +4,13 @@
 #include "stdint.h"
 #include "cmsis_os2.h"
 
-#define IMU_AG_BUF_SIZE 12
-#define IMU_M_BUF_SIZE  6
 #define IMU_RX_TIMEOUT  10
 #define IMU_TX_TIMEOUT  20
 #define IMU_TIMER_TIMEOUT   100
 
 I2C_HandleTypeDef* pIMU_I2C;
-static uint8_t IMU_AG_rxBuf[IMU_AG_BUF_SIZE];   //rx buffer for IMU A/G raw data
-static uint8_t IMU_M_rxBuf[IMU_M_BUF_SIZE];     //rx buffer for IMU M raw data
+uint8_t IMU_AG_rxBuf[IMU_AG_BUF_SIZE];   //rx buffer for IMU A/G raw data
+uint8_t IMU_M_rxBuf[IMU_M_BUF_SIZE];     //rx buffer for IMU M raw data
 static volatile bool IMU_AG_transferActive = false;     //flag indicating IMU A/G transfer phase
 volatile bool IMU_transferActive = false;     //flag indicating IMU transfer is ongoing
 

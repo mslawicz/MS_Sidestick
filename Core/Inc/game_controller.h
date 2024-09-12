@@ -19,6 +19,13 @@ typedef struct
     uint32_t buttons;
 } __attribute__((__packed__)) JoyData_t;
 
+typedef struct
+{
+    int16_t X;
+    int16_t Y;
+    int16_t Z;
+} int16_XYZ_t;
+
 void gameControllerLoop(void);
 
 #endif /* __GAME_CONTRLLER_H */

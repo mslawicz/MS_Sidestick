@@ -10,6 +10,8 @@
 
 #define IMU_AG_addr 0xD6
 #define IMU_M_addr  0x3C
+#define IMU_AG_BUF_SIZE 12
+#define IMU_M_BUF_SIZE  6
 
 /////////////////////////////////////////
 // LSM9DS1 Accel/Gyro (XL/G) Registers //
@@ -98,6 +100,8 @@
 #define WHO_AM_I_AG_RSP     0x68
 #define WHO_AM_I_M_RSP      0x3D
 
+extern uint8_t IMU_AG_rxBuf[IMU_AG_BUF_SIZE];   //rx buffer for IMU A/G raw data
+extern uint8_t IMU_M_rxBuf[IMU_M_BUF_SIZE];     //rx buffer for IMU M raw data
 extern I2C_HandleTypeDef* pIMU_I2C;
 extern volatile bool IMU_transferActive;     //flag indicating IMU transfer is ongoing
 
