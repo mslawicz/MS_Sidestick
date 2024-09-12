@@ -17,7 +17,7 @@ void gameControllerLoop(void)
     int16_XYZ_t IMU_A_rawData;  // IMU accelerometer raw data
     int16_XYZ_t IMU_M_rawData;  // IMU magnetometer raw data
     static const float IMU_G_toRadPerSec = 2.6632423658e-4f;
-    static const float IMU_A_toG = 3.0518509476e-5f;
+    static const float IMU_A_toG = 6.1037018952e-5f;
     static const float IMU_M_toGauss = 4.882961516e-4f;
     float_XYZ_t stickAngularRate;   //stick angular rate in rad/s
     float_XYZ_t stickAcceleration;  // stick acceleration in G */
@@ -57,7 +57,7 @@ void gameControllerLoop(void)
         stickAngularRate.Z = IMU_G_rawData.Z * IMU_G_toRadPerSec;
 
         /* stick acceleration [G] = val / 0x7FFF * 2 G */
-        /* stick acceleration [G] = val * 3.0518509476e-5 */
+        /* stick acceleration [G] = val * 6.1037018952e-5 */
         stickAcceleration.X = IMU_A_rawData.X * IMU_A_toG;
         stickAcceleration.Y = IMU_A_rawData.Y * IMU_A_toG;
         stickAcceleration.Z = IMU_A_rawData.Z * IMU_A_toG;
