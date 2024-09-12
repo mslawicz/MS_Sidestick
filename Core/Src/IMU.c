@@ -8,6 +8,7 @@
 #define IMU_M_BUF_SIZE  6
 #define IMU_RX_TIMEOUT  10
 #define IMU_TX_TIMEOUT  20
+#define IMU_TIMER_TIMEOUT   100
 
 I2C_HandleTypeDef* pIMU_I2C;
 static uint8_t IMU_AG_rxBuf[IMU_AG_BUF_SIZE];   //rx buffer for IMU A/G raw data
@@ -111,8 +112,6 @@ void IMU_init(void)
     else
     {
         LOG_INFO("IMU setup OK");
-        /* init the first IMU A/G readout */
-        IMU_AG_readRequest();
     }
 }
 
@@ -167,4 +166,12 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
         osEventFlagsSet(gameCtrlEventsHandle, IMU_DATA_READY_EVENT);
     }
   }
+}
+
+/* the function starts / restarts IMU timer
+    when time elapsed, IMU data readout is called in its callback function
+    used ones in the IMU startup phase and as the safety solution for IMU interrupt lost */
+void start_IMU_timer(void)
+{
+    osTimerStart(IMU_timerHandle, IMU_TIMER_TIMEOUT);
 }

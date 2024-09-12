@@ -103,6 +103,7 @@ extern volatile bool IMU_transferActive;     //flag indicating IMU transfer is o
 
 void IMU_init(void);
 void IMU_AG_readRequest(void);
+void start_IMU_timer(void);
 
 #ifdef __cplusplus
 }

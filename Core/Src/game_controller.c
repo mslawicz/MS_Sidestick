@@ -2,6 +2,7 @@
 #include "usbd_customhid.h"
 #include "usbd_custom_hid_if.h"
 #include "main.h"
+#include "IMU.h"
 
 osEventFlagsId_t* pGameCtrlEventsHandle;
 JoyData_t joyReport = {0};
@@ -13,9 +14,15 @@ void gameControllerLoop(void)
 {
     uint16_t step = 0;   // XXX test
 
+    /* IMU timer will call the first IMU readout */
+    start_IMU_timer();
+
     while(1)
     {
         osEventFlagsWait(gameCtrlEventsHandle, IMU_DATA_READY_EVENT, osFlagsWaitAny, osWaitForever);
+
+        /* restart IMU timer to prevent additional readouts if IMU interrupts come on time */
+        start_IMU_timer();        
 
         HAL_GPIO_WritePin(TEST1_GPIO_Port, TEST1_Pin, GPIO_PIN_SET);
         int16_t i16 = -32767 + (step % 100) * 655;

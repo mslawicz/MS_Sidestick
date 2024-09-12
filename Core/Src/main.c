@@ -56,6 +56,11 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for IMU_timer */
+osTimerId_t IMU_timerHandle;
+const osTimerAttr_t IMU_timer_attributes = {
+  .name = "IMU_timer"
+};
 /* Definitions for gameCtrlEvents */
 osEventFlagsId_t gameCtrlEventsHandle;
 const osEventFlagsAttr_t gameCtrlEvents_attributes = {
@@ -72,6 +77,7 @@ static void MX_DMA_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_I2C2_Init(void);
 void StartDefaultTask(void *argument);
+void IMU_timerCbk(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -133,6 +139,10 @@ int main(void)
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
+
+  /* Create the timer(s) */
+  /* creation of IMU_timer */
+  IMU_timerHandle = osTimerNew(IMU_timerCbk, osTimerPeriodic, NULL, &IMU_timer_attributes);
 
   /* USER CODE BEGIN RTOS_TIMERS */
   /* start timers, add new ones, ... */
@@ -413,11 +423,19 @@ void StartDefaultTask(void *argument)
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
   UNUSED(argument);
-  osDelay(10);
 /* call game controller infinite loop */
   gameControllerLoop();  
   /* this line is never reached */
   /* USER CODE END 5 */
+}
+
+/* IMU_timerCbk function */
+void IMU_timerCbk(void *argument)
+{
+  /* USER CODE BEGIN IMU_timerCbk */
+  UNUSED(argument);
+  IMU_AG_readRequest();
+  /* USER CODE END IMU_timerCbk */
 }
 
 /**
