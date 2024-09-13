@@ -40,6 +40,7 @@ typedef struct
     float yaw;
 } float_3D_t;
 
+extern TIM_HandleTypeDef* pStopWatch;   // timer for measurement time between game controller loop runs [us]
 
 void gameControllerLoop(void);
 

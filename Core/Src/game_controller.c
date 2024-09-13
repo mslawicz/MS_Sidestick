@@ -8,6 +8,7 @@
 
 osEventFlagsId_t* pGameCtrlEventsHandle;
 JoyData_t joyReport = {0};
+TIM_HandleTypeDef* pStopWatch = NULL;
 
 /* game controller loop
     upon reception of an event, the function prepares the controll data
@@ -27,10 +28,14 @@ void gameControllerLoop(void)
     float_XYZ_t sensorAngularRate;   //sensor angular rate in rad/s
     float_XYZ_t sensorAcceleration;  // sensor acceleration in G */
     float_XYZ_t sensorMagnFluxDens;  // sensor magnetic flux density in gauss */
-    float_3D_t sensorPosition;   /* 3D sensor position calculated from accelerometer and magnetometer (no gyroscope) */
+    float_3D_t sensorPosition;   /* 3D sensor position calculated from accelerometer or magnetometer (no gyroscope) */
+    float_3D_t sensorPositionFused; /* 3D sensor position calculated from accelerometer or magnetometer, and gyroscope (sensor fusion) */
+    static uint32_t previousTimerValue;
 
     /* IMU timer will call the first IMU readout */
     start_IMU_timer();
+    HAL_TIM_Base_Start(pStopWatch);
+    previousTimerValue = pStopWatch->Instance->CNT;
 
     while(1)
     {
@@ -39,6 +44,11 @@ void gameControllerLoop(void)
         /* restart IMU timer to prevent additional readouts if IMU interrupts come on time */
         start_IMU_timer();
         HAL_GPIO_WritePin(TEST1_GPIO_Port, TEST1_Pin, GPIO_PIN_SET);    //XXX test
+
+        /* calculate time from the previous call */
+        uint32_t currentTimerValue = pStopWatch->Instance->CNT;
+        float deltaT = 1e-6f * (float)(currentTimerValue - previousTimerValue);     // time elapsed since last pass [s]
+        previousTimerValue = currentTimerValue;
 
         /* read raw IMU data from its buffers; range -32767 ... 32767 */
         /* gyroscope full scale +- 500 deg/s */
