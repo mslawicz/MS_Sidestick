@@ -33,6 +33,13 @@ typedef struct
     float Z;
 } float_XYZ_t;
 
+typedef struct
+{
+    float pitch;
+    float roll;
+    float yaw;
+} float_3D_t;
+
 
 void gameControllerLoop(void);
 
