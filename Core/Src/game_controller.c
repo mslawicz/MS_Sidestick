@@ -10,6 +10,11 @@ osEventFlagsId_t* pGameCtrlEventsHandle;
 JoyData_t joyReport = {0};
 TIM_HandleTypeDef* pStopWatch = NULL;
 
+//XXX test - monitor variables
+int16_t global_x;
+int16_t global_y;
+int16_t global_z;
+
 /* game controller loop
     upon reception of an event, the function prepares the controll data
     for the host and sends the appriopriate report */
@@ -19,7 +24,6 @@ void gameControllerLoop(void)
     static const float IMU_A_sensitivity = 6.1037018952e-5f;     //G/1 bit
     static const float IMU_M_sensitivity = 4.882961516e-4f;      //gauss/1 bit
     static const float PI_3 = 1.04719755f;      // PI/3 (60 deg)
-    static const float PI_2 = 1.5707963268f;  // PI/2
     static const float Max15bit = 32767.0f;    //max 15-bit value in float type
     uint16_t step = 0;
     int16_XYZ_t IMU_G_rawData;  // IMU gyroscope raw data
@@ -29,7 +33,7 @@ void gameControllerLoop(void)
     float_XYZ_t sensorAcceleration;  // sensor acceleration in G */
     float_XYZ_t sensorMagnFluxDens;  // sensor magnetic flux density in gauss */
     float_3D_t sensorPosition;   /* 3D sensor position calculated from accelerometer or magnetometer (no gyroscope) */
-    float_3D_t sensorPositionFused; /* 3D sensor position calculated from accelerometer or magnetometer, and gyroscope (sensor fusion) */
+    static float_3D_t sensorPositionFused = {0, 0, 0}; /* 3D sensor position calculated from accelerometer or magnetometer, and gyroscope (sensor fusion) */
     static uint32_t previousTimerValue;
 
     /* IMU timer will call the first IMU readout */
@@ -97,17 +101,36 @@ void gameControllerLoop(void)
         sensorPosition.roll = atan2f(sensorAcceleration.X, accelerationYZ);        
 
         /* calculate sensor yaw from sensor magnetic flux density [rad] */
-        static const float magnetometerYawGain = 0.42f;    //experimentally adjusted for real angles
+        static const float magnetometerYawGain = 0.27f;    //experimentally adjusted for real angles
         sensorPosition.yaw = magnetometerYawGain * atan2f(sensorMagnFluxDens.Z, -sensorMagnFluxDens.X);
 
+        /* sensor fusion with gyroscope data; complementary filter used */
+        static const float ComplementaryFilterAlpha = 0.02f;
+
+        /* calculate sensor pitch from sensor A+G fusion with complementary filter [rad] */
+        sensorPositionFused.pitch = (1.0f - ComplementaryFilterAlpha) * (sensorPositionFused.pitch - sensorAngularRate.X * deltaT) +
+                                    ComplementaryFilterAlpha * sensorPosition.pitch;
+
+        /* calculate sensor roll from sensor A+G fusion with complementary filter [rad] */
+        sensorPositionFused.roll = (1.0f - ComplementaryFilterAlpha) * (sensorPositionFused.roll - sensorAngularRate.Y * deltaT) +
+                                    ComplementaryFilterAlpha * sensorPosition.roll;
+
+        /* senor fusion is not applied to yaw, because magnetometer calculations are sufficient */
+        sensorPositionFused.yaw = sensorPosition.yaw;                                    
+                                                             
+
+
+        //XXX test
+        global_x = (int16_t)(10000 * sensorPositionFused.roll);
+        global_y = (int16_t)(10000 * sensorPositionFused.pitch);
+        global_z = (int16_t)(10000 * sensorPositionFused.yaw);
 
 
         int16_t i16 = -32767 + (step % 100) * 655;
-        joyReport.X = (int16_t)scale(-PI_3, PI_3, sensorPosition.roll, -Max15bit, Max15bit);   //TODO it should be replaced with calibrated stick roll
-        joyReport.Y = (int16_t)scale(-PI_3, PI_3, sensorPosition.pitch, -Max15bit, Max15bit);   //TODO it should be replaced with calibrated stick pitch
+        joyReport.X = (int16_t)scale(-PI_3, PI_3, sensorPositionFused.roll, -Max15bit, Max15bit);   //TODO it should be replaced with calibrated stick roll
+        joyReport.Y = (int16_t)scale(-PI_3, PI_3, sensorPositionFused.pitch, -Max15bit, Max15bit);   //TODO it should be replaced with calibrated stick pitch
         joyReport.Z = i16;
-        /* sensor yaw in -PI/3 ... PI/3 range */
-        joyReport.Rz = (int16_t)scale(-PI_3, PI_3, sensorPosition.yaw, -Max15bit, Max15bit);   //TODO it should be replaced with calibrated stick yaw
+        joyReport.Rz = (int16_t)scale(-PI_3, PI_3, sensorPositionFused.yaw, -Max15bit, Max15bit);   //TODO it should be replaced with calibrated stick yaw
         uint16_t u16 = (step % 100) * 327;
         joyReport.Rx = u16;
         joyReport.Ry = u16;

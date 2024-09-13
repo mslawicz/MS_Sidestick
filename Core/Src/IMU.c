@@ -14,17 +14,6 @@ uint8_t IMU_M_rxBuf[IMU_M_BUF_SIZE];     //rx buffer for IMU M raw data
 static volatile bool IMU_AG_transferActive = false;     //flag indicating IMU A/G transfer phase
 volatile bool IMU_transferActive = false;     //flag indicating IMU transfer is ongoing
 
-//XXX monitor variables
-int16_t global_acc_X;
-int16_t global_acc_Y;
-int16_t global_acc_Z;
-int16_t global_g_X;
-int16_t global_g_Y;
-int16_t global_g_Z;
-int16_t global_m_X;
-int16_t global_m_Y;
-int16_t global_m_Z;
-
 void IMU_M_readRequest(void);
 
 void IMU_init(void)
@@ -145,18 +134,7 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
     {
         /* callback on IMU A/G transfer complete - continue with IMU M transfer */
         IMU_M_readRequest();
-        IMU_AG_transferActive = false;
-
-        //XXX monitor variables
-        global_acc_X = *(int16_t*)(IMU_AG_rxBuf + 6);
-        global_acc_Y = *(int16_t*)(IMU_AG_rxBuf + 8);
-        global_acc_Z = *(int16_t*)(IMU_AG_rxBuf + 10);
-        global_g_X = *(int16_t*)(IMU_AG_rxBuf + 0);
-        global_g_Y = *(int16_t*)(IMU_AG_rxBuf + 2);
-        global_g_Z = *(int16_t*)(IMU_AG_rxBuf + 4);        
-        global_m_X = *(int16_t*)(IMU_M_rxBuf + 0);
-        global_m_Y = *(int16_t*)(IMU_M_rxBuf + 2);
-        global_m_Z = *(int16_t*)(IMU_M_rxBuf + 4);         
+        IMU_AG_transferActive = false;        
     }
     else
     {
