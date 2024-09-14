@@ -36,11 +36,12 @@ void gameControllerLoop(void)
     float_XYZ_t sensorMagnFluxDens;  // sensor magnetic flux density in gauss */
     float_3D_t sensorPosition;   /* 3D sensor position calculated from accelerometer or magnetometer (no gyroscope) [rad] */
     float_3D_t sensorPositionFused = {0, 0, 0}; /* 3D sensor position calculated from accelerometer or magnetometer, and gyroscope (sensor fusion) [rad] */
-    uint32_t previousTimerValue;     //used for loop pass interval calculation
-    float_3D_t prevSensorPositionFused;     //used for stick calibration
-    float_3D_t sensorVariability ={0};   //sensor variability used for stick calibration
-    float_3D_t sensorReference = {0, 0, 0};     //measured sensor reference values for calibration [rad]
-    float_3D_t sensorPositionCalibrated;    //calibrated sensor position [rad]
+    uint32_t previousTimerValue;     // used for loop pass interval calculation
+    float_3D_t prevSensorPositionFused;     // used for stick calibration
+    float_3D_t sensorVariability ={0};   // sensor variability used for stick calibration
+    float_3D_t sensorReference = {0, 0, 0};     // measured sensor reference values for calibration [rad]
+    float_3D_t sensorPositionCalibrated;    // calibrated sensor position [rad]
+    float_3D_t stickPosition;   // stick position independent on yaw
 
     /* IMU timer will call the first IMU readout */
     start_IMU_timer();
@@ -166,21 +167,29 @@ void gameControllerLoop(void)
         sensorPositionCalibrated.roll = sensorPositionFused.roll - sensorReference.roll;
         sensorPositionCalibrated.pitch = sensorPositionFused.pitch - sensorReference.pitch;
         sensorPositionCalibrated.yaw = sensorPositionFused.yaw - sensorReference.yaw;
+
+        /* calculate stick roll and pitch independent on yaw [rad] */
+        stickPosition.roll = sensorPositionCalibrated.roll * cosf(sensorPositionCalibrated.yaw) -
+                             sensorPositionCalibrated.pitch * sin(sensorPositionCalibrated.yaw);
+        stickPosition.pitch = sensorPositionCalibrated.pitch * cosf(sensorPositionCalibrated.yaw) +
+                              sensorPositionCalibrated.roll * sin(sensorPositionCalibrated.yaw);                             
+        stickPosition.yaw = sensorPositionCalibrated.yaw;                                                     
+
                                                              
 
 
         //XXX test
-        global_x = 10000.0f * sensorReference.roll;
-        global_y = 10000.0f * sensorReference.pitch;
-        global_z = 10000.0f * sensorReference.yaw;
+        global_x = 10000.0f * stickPosition.roll;
+        global_y = 10000.0f * stickPosition.pitch;
+        global_z = 10000.0f * stickPosition.yaw;
         
 
 
         int16_t i16 = -32767 + (loopCounter % 100) * 655;
-        joyReport.X = (int16_t)scale(-PI_3, PI_3, sensorPositionCalibrated.roll, -Max15bit, Max15bit);   //TODO it should be replaced with calibrated stick ro
-        joyReport.Y = (int16_t)scale(-PI_3, PI_3, sensorPositionCalibrated.pitch, -Max15bit, Max15bit);   //TODO it should be replaced with calibrated stick pitch
+        joyReport.X = (int16_t)scale(-PI_3, PI_3, stickPosition.roll, -Max15bit, Max15bit);
+        joyReport.Y = (int16_t)scale(-PI_3, PI_3, stickPosition.pitch, -Max15bit, Max15bit);
         joyReport.Z = i16;
-        joyReport.Rz = (int16_t)scale(-PI_3, PI_3, sensorPositionCalibrated.yaw, -Max15bit, Max15bit);   //TODO it should be replaced with calibrated stick yaw
+        joyReport.Rz = (int16_t)scale(-PI_3, PI_3, stickPosition.yaw, -Max15bit, Max15bit);
         uint16_t u16 = (loopCounter % 100) * 327;
         joyReport.Rx = u16;
         joyReport.Ry = u16;
