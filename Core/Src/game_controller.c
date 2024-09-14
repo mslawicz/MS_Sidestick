@@ -42,6 +42,10 @@ void gameControllerLoop(void)
     float_3D_t sensorReference = {0, 0, 0};     // measured sensor reference values for calibration [rad]
     float_3D_t sensorPositionCalibrated;    // calibrated sensor position [rad]
     float_3D_t stickPosition;   // stick position independent on yaw
+    bool brakeActive;   //if true, brakes controlled with stick deflections
+    float brakeLeft;
+    float brakeRight;
+    int16_t lastJoyReportY = 0;   // store last joystick report Y value when brakes are not active
 
     /* IMU timer will call the first IMU readout */
     start_IMU_timer();
@@ -173,31 +177,47 @@ void gameControllerLoop(void)
         float sinYaw = sinf(sensorPositionCalibrated.yaw);
         stickPosition.roll = sensorPositionCalibrated.roll * cosYaw - sensorPositionCalibrated.pitch * sinYaw;
         stickPosition.pitch = sensorPositionCalibrated.pitch * cosYaw + sensorPositionCalibrated.roll * sinYaw;                             
-        stickPosition.yaw = sensorPositionCalibrated.yaw;                                                     
+        stickPosition.yaw = sensorPositionCalibrated.yaw;
 
-                                                             
+        /* calculate brakes */
+        brakeActive = true; //TODO it should be set by a pushbutton on the stick
+        if(brakeActive)
+        {
+            // both brakes activated with stick pushed forward
+            brakeLeft = brakeRight = 2.0f * ( stickPosition.pitch < 0 ? -stickPosition.pitch : 0.0f);
+            // left and right brakes activated with joystick deflected sideways
+            brakeLeft += (stickPosition.roll < 0 ? -stickPosition.roll : 0.0f);
+            brakeRight += (stickPosition.roll > 0 ? stickPosition.roll : 0.0f);
+            // joystick Y value is hold steady
+            joyReport.Y = lastJoyReportY;
+        }
+        else
+        {
+            //joystick Y value is uptaded when brakes are not active only
+            joyReport.Y = (int16_t)scale(-PI_3, PI_3, stickPosition.pitch, -Max15bit, Max15bit);
+            lastJoyReportY = joyReport.Y;
+            //release brakes
+            brakeLeft = brakeRight = 0.0f;
+        }                                         
+
+
+        joyReport.X = (int16_t)scale(-PI_3, PI_3, stickPosition.roll, -Max15bit, Max15bit);
+        joyReport.Z = 0;
+        joyReport.Rz = (int16_t)scale(-PI_3, PI_3, stickPosition.yaw, -Max15bit, Max15bit);
+        joyReport.Rx = (uint16_t)scale(0, 1.0f, brakeLeft, 0, Max15bit);
+        joyReport.Ry = (uint16_t)scale(0, 1.0f, brakeRight, 0, Max15bit);
+        joyReport.slider = 0;
+        joyReport.dial = 0;
+        joyReport.HAT = ((loopCounter >> 4) % 8) + 1;
+        joyReport.buttons = 1 << ((loopCounter >> 4) % 32);
+        USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, (uint8_t*)&joyReport, sizeof(joyReport));
 
 
         //XXX test
         global_x = 10000.0f * stickPosition.roll;
         global_y = 10000.0f * stickPosition.pitch;
         global_z = 10000.0f * stickPosition.yaw;
-        
 
-
-        int16_t i16 = -32767 + (loopCounter % 100) * 655;
-        joyReport.X = (int16_t)scale(-PI_3, PI_3, stickPosition.roll, -Max15bit, Max15bit);
-        joyReport.Y = (int16_t)scale(-PI_3, PI_3, stickPosition.pitch, -Max15bit, Max15bit);
-        joyReport.Z = i16;
-        joyReport.Rz = (int16_t)scale(-PI_3, PI_3, stickPosition.yaw, -Max15bit, Max15bit);
-        uint16_t u16 = (loopCounter % 100) * 327;
-        joyReport.Rx = u16;
-        joyReport.Ry = u16;
-        joyReport.slider = u16;
-        joyReport.dial = u16;
-        joyReport.HAT = ((loopCounter >> 4) % 8) + 1;
-        joyReport.buttons = 1 << ((loopCounter >> 4) % 32);
-        USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, (uint8_t*)&joyReport, sizeof(joyReport));
         if((loopCounter % 60) == 0)
         {
             /* it should be executed roughly every half a second */
