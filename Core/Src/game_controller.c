@@ -169,10 +169,10 @@ void gameControllerLoop(void)
         sensorPositionCalibrated.yaw = sensorPositionFused.yaw - sensorReference.yaw;
 
         /* calculate stick roll and pitch independent on yaw [rad] */
-        stickPosition.roll = sensorPositionCalibrated.roll * cosf(sensorPositionCalibrated.yaw) -
-                             sensorPositionCalibrated.pitch * sin(sensorPositionCalibrated.yaw);
-        stickPosition.pitch = sensorPositionCalibrated.pitch * cosf(sensorPositionCalibrated.yaw) +
-                              sensorPositionCalibrated.roll * sin(sensorPositionCalibrated.yaw);                             
+        float cosYaw = cosf(sensorPositionCalibrated.yaw);
+        float sinYaw = sinf(sensorPositionCalibrated.yaw);
+        stickPosition.roll = sensorPositionCalibrated.roll * cosYaw - sensorPositionCalibrated.pitch * sinYaw;
+        stickPosition.pitch = sensorPositionCalibrated.pitch * cosYaw + sensorPositionCalibrated.roll * sinYaw;                             
         stickPosition.yaw = sensorPositionCalibrated.yaw;                                                     
 
                                                              
