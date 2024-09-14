@@ -6,14 +6,16 @@
 #include "convert.h"
 #include <math.h>
 
+#define USE_COMPL_FLT_YAW   0
+
 osEventFlagsId_t* pGameCtrlEventsHandle;
 JoyData_t joyReport = {0};
 TIM_HandleTypeDef* pStopWatch = NULL;
 
 //XXX test - monitor variables
-int16_t global_x;
-int16_t global_y;
-int16_t global_z;
+float global_x;
+float global_y;
+float global_z;
 
 /* game controller loop
     upon reception of an event, the function prepares the controll data
@@ -25,16 +27,20 @@ void gameControllerLoop(void)
     static const float IMU_M_sensitivity = 4.882961516e-4f;      //gauss/1 bit
     static const float PI_3 = 1.04719755f;      // PI/3 (60 deg)
     static const float Max15bit = 32767.0f;    //max 15-bit value in float type
-    uint16_t step = 0;
+    uint16_t loopCounter = 0;
     int16_XYZ_t IMU_G_rawData;  // IMU gyroscope raw data
     int16_XYZ_t IMU_A_rawData;  // IMU accelerometer raw data
     int16_XYZ_t IMU_M_rawData;  // IMU magnetometer raw data
     float_XYZ_t sensorAngularRate;   //sensor angular rate in rad/s
     float_XYZ_t sensorAcceleration;  // sensor acceleration in G */
     float_XYZ_t sensorMagnFluxDens;  // sensor magnetic flux density in gauss */
-    float_3D_t sensorPosition;   /* 3D sensor position calculated from accelerometer or magnetometer (no gyroscope) */
-    static float_3D_t sensorPositionFused = {0, 0, 0}; /* 3D sensor position calculated from accelerometer or magnetometer, and gyroscope (sensor fusion) */
-    static uint32_t previousTimerValue;
+    float_3D_t sensorPosition;   /* 3D sensor position calculated from accelerometer or magnetometer (no gyroscope) [rad] */
+    float_3D_t sensorPositionFused = {0, 0, 0}; /* 3D sensor position calculated from accelerometer or magnetometer, and gyroscope (sensor fusion) [rad] */
+    uint32_t previousTimerValue;     //used for loop pass interval calculation
+    float_3D_t prevSensorPositionFused;     //used for stick calibration
+    float_3D_t sensorVariability ={0};   //sensor variability used for stick calibration
+    float_3D_t sensorReference = {0, 0, 0};     //measured sensor reference values for calibration [rad]
+    float_3D_t sensorPositionCalibrated;    //calibrated sensor position [rad]
 
     /* IMU timer will call the first IMU readout */
     start_IMU_timer();
@@ -44,10 +50,11 @@ void gameControllerLoop(void)
     while(1)
     {
         osEventFlagsWait(gameCtrlEventsHandle, IMU_DATA_READY_EVENT, osFlagsWaitAny, osWaitForever);
+        HAL_GPIO_WritePin(TEST1_GPIO_Port, TEST1_Pin, GPIO_PIN_SET);    //XXX test
+        loopCounter++;
 
         /* restart IMU timer to prevent additional readouts if IMU interrupts come on time */
         start_IMU_timer();
-        HAL_GPIO_WritePin(TEST1_GPIO_Port, TEST1_Pin, GPIO_PIN_SET);    //XXX test
 
         /* calculate time from the previous call */
         uint32_t currentTimerValue = pStopWatch->Instance->CNT;
@@ -94,53 +101,94 @@ void gameControllerLoop(void)
         float accelerationXZ = sqrt(sensorAcceleration.X * sensorAcceleration.X + accelerationZ2);
         float accelerationYZ = sqrt(sensorAcceleration.Y * sensorAcceleration.Y + accelerationZ2);
 
-        /* calculate sensor pitch from sensor acceleration [rad] */
-        sensorPosition.pitch = atan2f(-sensorAcceleration.Y, accelerationXZ);
-
         /* calculate sensor roll from sensor acceleration [rad] */
         sensorPosition.roll = atan2f(sensorAcceleration.X, accelerationYZ);        
+
+        /* calculate sensor pitch from sensor acceleration [rad] */
+        sensorPosition.pitch = atan2f(-sensorAcceleration.Y, accelerationXZ);
 
         /* calculate sensor yaw from sensor magnetic flux density [rad] */
         static const float magnetometerYawGain = 0.27f;    //experimentally adjusted for real angles
         sensorPosition.yaw = magnetometerYawGain * atan2f(sensorMagnFluxDens.Z, -sensorMagnFluxDens.X);
 
+        /* store previous value of sensor position fused for calibration calculations */
+        prevSensorPositionFused.roll = sensorPositionFused.roll;
+        prevSensorPositionFused.pitch = sensorPositionFused.pitch;
+        prevSensorPositionFused.yaw = sensorPositionFused.roll;
+
         /* sensor fusion with gyroscope data; complementary filter used */
         static const float ComplementaryFilterAlpha = 0.02f;
-
-        /* calculate sensor pitch from sensor A+G fusion with complementary filter [rad] */
-        sensorPositionFused.pitch = (1.0f - ComplementaryFilterAlpha) * (sensorPositionFused.pitch - sensorAngularRate.X * deltaT) +
-                                    ComplementaryFilterAlpha * sensorPosition.pitch;
 
         /* calculate sensor roll from sensor A+G fusion with complementary filter [rad] */
         sensorPositionFused.roll = (1.0f - ComplementaryFilterAlpha) * (sensorPositionFused.roll - sensorAngularRate.Y * deltaT) +
                                     ComplementaryFilterAlpha * sensorPosition.roll;
 
-        /* senor fusion is not applied to yaw, because magnetometer calculations are sufficient */
-        sensorPositionFused.yaw = sensorPosition.yaw;                                    
+        /* calculate sensor pitch from sensor A+G fusion with complementary filter [rad] */
+        sensorPositionFused.pitch = (1.0f - ComplementaryFilterAlpha) * (sensorPositionFused.pitch - sensorAngularRate.X * deltaT) +
+                                    ComplementaryFilterAlpha * sensorPosition.pitch;
+
+#if(USE_COMPL_FLT_YAW)
+        /* calculate sensor pitch from sensor M+G fusion with complementary filter [rad] */
+        sensorPositionFused.yaw = (1.0f - ComplementaryFilterAlpha) * (sensorPositionFused.yaw - sensorAngularRate.Z * deltaT) +
+                                    ComplementaryFilterAlpha * sensorPosition.yaw;        
+#else
+        /* senor fusion is not applied to yaw, because magnetometer calculations are precise and reliable */
+        sensorPositionFused.yaw = sensorPosition.yaw;
+#endif //USE_COMPL_FLT_YAW        
+
+        /* calculate sensor position variability for roll and pitch axes */
+        const float VariabilityFilterAlpha = 0.01f;
+        float reciprocalDeltaT = (deltaT > 0.0f) ? (1.0f / deltaT) : 1.0f;
+        sensorVariability.roll = (1.0f - VariabilityFilterAlpha) * sensorVariability.roll + 
+            VariabilityFilterAlpha * fabsf(sensorPositionFused.roll - prevSensorPositionFused.roll) * reciprocalDeltaT;
+        sensorVariability.pitch = (1.0f - VariabilityFilterAlpha) * sensorVariability.pitch + 
+            VariabilityFilterAlpha * fabsf(sensorPositionFused.pitch - prevSensorPositionFused.pitch) * reciprocalDeltaT;
+
+        /* continuous sensor calibration */
+        static const float SensorVariabilityTreshold = 0.0025f;
+        if((sensorVariability.roll < SensorVariabilityTreshold) &&
+            (sensorVariability.pitch < SensorVariabilityTreshold))
+        {
+            /* sensor steady - calibrate */
+            sensorReference.roll = sensorPositionFused.roll;
+            sensorReference.pitch = sensorPositionFused.pitch;
+            sensorReference.yaw = sensorPositionFused.yaw;
+            HAL_GPIO_WritePin(LED_B_GPIO_Port, LED_B_Pin, GPIO_PIN_SET);
+        }
+        else
+        {
+            /* sensor not steady */
+            HAL_GPIO_WritePin(LED_B_GPIO_Port, LED_B_Pin, GPIO_PIN_RESET);
+        }
+
+        /* calculate calibrated sensor position [rad] */
+        sensorPositionCalibrated.roll = sensorPositionFused.roll - sensorReference.roll;
+        sensorPositionCalibrated.pitch = sensorPositionFused.pitch - sensorReference.pitch;
+        sensorPositionCalibrated.yaw = sensorPositionFused.yaw - sensorReference.yaw;
                                                              
 
 
         //XXX test
-        global_x = (int16_t)(10000 * sensorPositionFused.roll);
-        global_y = (int16_t)(10000 * sensorPositionFused.pitch);
-        global_z = (int16_t)(10000 * sensorPositionFused.yaw);
+        global_x = 10000.0f * sensorPositionCalibrated.roll;
+        global_y = 10000.0f * sensorPositionCalibrated.pitch;
+        global_z = 10000.0f * sensorPositionCalibrated.yaw;
+        
 
 
-        int16_t i16 = -32767 + (step % 100) * 655;
-        joyReport.X = (int16_t)scale(-PI_3, PI_3, sensorPositionFused.roll, -Max15bit, Max15bit);   //TODO it should be replaced with calibrated stick roll
-        joyReport.Y = (int16_t)scale(-PI_3, PI_3, sensorPositionFused.pitch, -Max15bit, Max15bit);   //TODO it should be replaced with calibrated stick pitch
+        int16_t i16 = -32767 + (loopCounter % 100) * 655;
+        joyReport.X = (int16_t)scale(-PI_3, PI_3, sensorPositionCalibrated.roll, -Max15bit, Max15bit);   //TODO it should be replaced with calibrated stick ro
+        joyReport.Y = (int16_t)scale(-PI_3, PI_3, sensorPositionCalibrated.pitch, -Max15bit, Max15bit);   //TODO it should be replaced with calibrated stick pitch
         joyReport.Z = i16;
-        joyReport.Rz = (int16_t)scale(-PI_3, PI_3, sensorPositionFused.yaw, -Max15bit, Max15bit);   //TODO it should be replaced with calibrated stick yaw
-        uint16_t u16 = (step % 100) * 327;
+        joyReport.Rz = (int16_t)scale(-PI_3, PI_3, sensorPositionCalibrated.yaw, -Max15bit, Max15bit);   //TODO it should be replaced with calibrated stick yaw
+        uint16_t u16 = (loopCounter % 100) * 327;
         joyReport.Rx = u16;
         joyReport.Ry = u16;
         joyReport.slider = u16;
         joyReport.dial = u16;
-        joyReport.HAT = ((step >> 4) % 8) + 1;
-        joyReport.buttons = 1 << ((step >> 4) % 32);
-        step++;
+        joyReport.HAT = ((loopCounter >> 4) % 8) + 1;
+        joyReport.buttons = 1 << ((loopCounter >> 4) % 32);
         USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, (uint8_t*)&joyReport, sizeof(joyReport));
-        if((step % 60) == 0)
+        if((loopCounter % 60) == 0)
         {
             /* it should be executed roughly every half a second */
             HAL_GPIO_TogglePin(LED_G_GPIO_Port, LED_G_Pin);
