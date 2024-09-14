@@ -150,9 +150,10 @@ void gameControllerLoop(void)
             (sensorVariability.pitch < SensorVariabilityTreshold))
         {
             /* sensor steady - calibrate */
-            sensorReference.roll = sensorPositionFused.roll;
-            sensorReference.pitch = sensorPositionFused.pitch;
-            sensorReference.yaw = sensorPositionFused.yaw;
+            static const float ReferenceFilterAlpha = 0.01f;
+            sensorReference.roll = (1.0f - ReferenceFilterAlpha) * sensorReference.roll + ReferenceFilterAlpha * sensorPositionFused.roll;
+            sensorReference.pitch = (1.0f - ReferenceFilterAlpha) * sensorReference.pitch + ReferenceFilterAlpha * sensorPositionFused.pitch;
+            sensorReference.yaw = (1.0f - ReferenceFilterAlpha) * sensorReference.yaw + ReferenceFilterAlpha * sensorPositionFused.yaw;
             HAL_GPIO_WritePin(LED_B_GPIO_Port, LED_B_Pin, GPIO_PIN_SET);
         }
         else
@@ -169,9 +170,9 @@ void gameControllerLoop(void)
 
 
         //XXX test
-        global_x = 10000.0f * sensorPositionCalibrated.roll;
-        global_y = 10000.0f * sensorPositionCalibrated.pitch;
-        global_z = 10000.0f * sensorPositionCalibrated.yaw;
+        global_x = 10000.0f * sensorReference.roll;
+        global_y = 10000.0f * sensorReference.pitch;
+        global_z = 10000.0f * sensorReference.yaw;
         
 
 
