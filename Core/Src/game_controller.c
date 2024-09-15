@@ -17,6 +17,8 @@ float global_x;
 float global_y;
 float global_z;
 
+uint8_t getHAT(bool HAT_active);
+
 /* game controller loop
     upon reception of an event, the function prepares the controll data
     for the host and sends the appriopriate report */
@@ -42,7 +44,6 @@ void gameControllerLoop(void)
     float_3D_t sensorReference = {0, 0, 0};     // measured sensor reference values for calibration [rad]
     float_3D_t sensorPositionCalibrated;    // calibrated sensor position [rad]
     float_3D_t stickPosition;   // stick position independent on yaw
-    bool brakeActive;   //if true, brakes controlled with stick deflections
     float brakeLeft;
     float brakeRight;
     int16_t lastJoyReportY = 0;   // store last joystick report Y value when brakes are not active
@@ -180,9 +181,9 @@ void gameControllerLoop(void)
         stickPosition.yaw = sensorPositionCalibrated.yaw;
 
         /* calculate brakes */
-        brakeActive = false; //TODO it should be set by a pushbutton on the stick
-        if(brakeActive)
+        if(HAL_GPIO_ReadPin(HAT_RESET_GPIO_Port, HAT_RESET_Pin) == GPIO_PIN_RESET)
         {
+            // brakes active
             // both brakes activated with stick pushed forward
             brakeLeft = brakeRight = 2.0f * ( stickPosition.pitch < 0 ? -stickPosition.pitch : 0.0f);
             // left and right brakes activated with joystick deflected sideways
@@ -208,7 +209,7 @@ void gameControllerLoop(void)
         joyReport.Ry = (uint16_t)scale(0, 1.0f, brakeRight, 0, Max15bit);
         joyReport.slider = 0;
         joyReport.dial = 0;
-        joyReport.HAT = 0;//((loopCounter >> 4) % 8) + 1;
+        joyReport.HAT = getHAT(true);
         joyReport.buttons = 0;//1 << ((loopCounter >> 4) % 32);
         USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, (uint8_t*)&joyReport, sizeof(joyReport));
 
@@ -226,3 +227,41 @@ void gameControllerLoop(void)
         HAL_GPIO_WritePin(TEST1_GPIO_Port, TEST1_Pin, GPIO_PIN_RESET);  //XXX test
     }
 }  
+
+/* get HAT switch value */
+/* if HAT is not active, returns 0 */
+uint8_t getHAT(bool HAT_active)
+{
+    static const uint8_t HAT_value[] =
+    {
+        0,  //0x00: combination not possible
+        0,  //0x01: combination not possible
+        0,  //0x02: combination not possible
+        6,  //0x03: down+left
+        0,  //0x04: combination not possible
+        0,  //0x05: combination not possible
+        8,  //0x06: up+left
+        7,  //0x07: left
+        0,  //0x08: combination not possible
+        4,  //0x09: down+right
+        0,  //0x0A: combination not possible
+        5,  //0x0B: down
+        2,  //0x0C: up+right
+        3,  //0x0D: right
+        1,  //0x0E: up
+        0   //0x0F: no button pressed
+    };
+
+    if(!HAT_active)
+    {
+        return 0;
+    }
+
+    uint8_t HAT_buttons =
+        HAL_GPIO_ReadPin(HAT_UP_GPIO_Port, HAT_UP_Pin) |
+        (HAL_GPIO_ReadPin(HAT_RIGHT_GPIO_Port, HAT_RIGHT_Pin) << 1) |
+        (HAL_GPIO_ReadPin(HAT_DOWN_GPIO_Port, HAT_DOWN_Pin) << 2) |
+        (HAL_GPIO_ReadPin(HAT_LEFT_GPIO_Port, HAT_LEFT_Pin) << 3);
+
+    return HAT_value[HAT_buttons];
+}
