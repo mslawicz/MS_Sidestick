@@ -8,6 +8,15 @@
 
 #define USE_COMPL_FLT_YAW   0
 
+enum Buttons_t
+{
+    BT_HAT_MID,
+    BT_HAT_UP,
+    BT_HAT_DOWN,
+    BT_HAT_RIGHT,
+    BT_HAT_LEFT
+};
+
 osEventFlagsId_t* pGameCtrlEventsHandle;
 JoyData_t joyReport = {0};
 TIM_HandleTypeDef* pStopWatch = NULL;
@@ -17,7 +26,8 @@ float global_x;
 float global_y;
 float global_z;
 
-uint8_t getHAT(bool HAT_active);
+static uint8_t getHAT(bool HAT_active);
+static uint32_t getButtons(bool HAT_active);
 
 /* game controller loop
     upon reception of an event, the function prepares the controll data
@@ -210,7 +220,7 @@ void gameControllerLoop(void)
         joyReport.slider = 0;
         joyReport.dial = 0;
         joyReport.HAT = getHAT(true);
-        joyReport.buttons = 0;//1 << ((loopCounter >> 4) % 32);
+        joyReport.buttons = getButtons(false);
         USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, (uint8_t*)&joyReport, sizeof(joyReport));
 
 
@@ -264,4 +274,22 @@ uint8_t getHAT(bool HAT_active)
         (HAL_GPIO_ReadPin(HAT_LEFT_GPIO_Port, HAT_LEFT_Pin) << 3);
 
     return HAT_value[HAT_buttons];
+}
+
+uint32_t getButtons(bool HAT_active)
+{
+    uint32_t buttons = 0;
+
+    buttons |= (HAL_GPIO_ReadPin(HAT_MID_GPIO_Port, HAT_MID_Pin) ^ 1) << BT_HAT_MID;
+
+    if(!HAT_active)
+    {
+        //these buttons are handled when HAT is not active
+        buttons |= (HAL_GPIO_ReadPin(HAT_UP_GPIO_Port, HAT_UP_Pin) ^ 1) << BT_HAT_UP;
+        buttons |= (HAL_GPIO_ReadPin(HAT_DOWN_GPIO_Port, HAT_DOWN_Pin) ^ 1) << BT_HAT_DOWN;
+        buttons |= (HAL_GPIO_ReadPin(HAT_RIGHT_GPIO_Port, HAT_RIGHT_Pin) ^ 1) << BT_HAT_RIGHT;
+        buttons |= (HAL_GPIO_ReadPin(HAT_LEFT_GPIO_Port, HAT_LEFT_Pin) ^ 1) << BT_HAT_LEFT;        
+    }
+
+    return buttons;
 }
