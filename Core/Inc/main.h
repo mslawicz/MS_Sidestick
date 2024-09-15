@@ -60,6 +60,8 @@ extern osTimerId_t IMU_timerHandle;
 /* Private defines -----------------------------------------------------------*/
 #define CUSTOM_HID_EPIN_SIZE 64
 #define CUSTOM_HID_EPOUT_SIZE 64
+#define HAT_RESET_Pin GPIO_PIN_6
+#define HAT_RESET_GPIO_Port GPIOE
 #define PB_BLUE_Pin GPIO_PIN_13
 #define PB_BLUE_GPIO_Port GPIOC
 #define TEST1_Pin GPIO_PIN_2
@@ -95,10 +97,22 @@ extern osTimerId_t IMU_timerHandle;
 #define INT1_A_G_Pin GPIO_PIN_1
 #define INT1_A_G_GPIO_Port GPIOD
 #define INT1_A_G_EXTI_IRQn EXTI1_IRQn
+#define HAT_RIGHT_Pin GPIO_PIN_9
+#define HAT_RIGHT_GPIO_Port GPIOG
+#define HAT_LEFT_Pin GPIO_PIN_10
+#define HAT_LEFT_GPIO_Port GPIOG
+#define HAT_DOWN_Pin GPIO_PIN_12
+#define HAT_DOWN_GPIO_Port GPIOG
+#define HAT_UP_Pin GPIO_PIN_13
+#define HAT_UP_GPIO_Port GPIOG
+#define HAT_MID_Pin GPIO_PIN_15
+#define HAT_MID_GPIO_Port GPIOG
 #define SWO_Pin GPIO_PIN_3
 #define SWO_GPIO_Port GPIOB
 #define LED_B_Pin GPIO_PIN_7
 #define LED_B_GPIO_Port GPIOB
+#define HAT_SET_Pin GPIO_PIN_1
+#define HAT_SET_GPIO_Port GPIOE
 
 /* USER CODE BEGIN Private defines */
 #define IMU_DATA_READY_EVENT  1

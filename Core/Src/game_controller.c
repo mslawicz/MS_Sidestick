@@ -180,7 +180,7 @@ void gameControllerLoop(void)
         stickPosition.yaw = sensorPositionCalibrated.yaw;
 
         /* calculate brakes */
-        brakeActive = true; //TODO it should be set by a pushbutton on the stick
+        brakeActive = false; //TODO it should be set by a pushbutton on the stick
         if(brakeActive)
         {
             // both brakes activated with stick pushed forward
@@ -208,8 +208,8 @@ void gameControllerLoop(void)
         joyReport.Ry = (uint16_t)scale(0, 1.0f, brakeRight, 0, Max15bit);
         joyReport.slider = 0;
         joyReport.dial = 0;
-        joyReport.HAT = ((loopCounter >> 4) % 8) + 1;
-        joyReport.buttons = 1 << ((loopCounter >> 4) % 32);
+        joyReport.HAT = 0;//((loopCounter >> 4) % 8) + 1;
+        joyReport.buttons = 0;//1 << ((loopCounter >> 4) % 32);
         USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, (uint8_t*)&joyReport, sizeof(joyReport));
 
 
