@@ -17,9 +17,17 @@ enum Buttons_t
     BT_HAT_LEFT
 };
 
+enum ADC_channels
+{
+    ADC_POT_ORANGE,
+    ADC_POT_YELLOW,
+    ADC_CH_NUMB
+};
+
 osEventFlagsId_t* pGameCtrlEventsHandle;
 JoyData_t joyReport = {0};
 TIM_HandleTypeDef* pStopWatch = NULL;
+uint16_t ADC_value[ADC_CH_NUMB];
 
 //XXX test - monitor variables
 float global_x;
@@ -60,6 +68,7 @@ void gameControllerLoop(void)
 
     /* IMU timer will call the first IMU readout */
     start_IMU_timer();
+    HAL_ADC_Start_DMA(&hadc1, (uint32_t*)ADC_value, ADC_CH_NUMB);
     HAL_TIM_Base_Start(pStopWatch);
     previousTimerValue = pStopWatch->Instance->CNT;
 

@@ -55,6 +55,7 @@ void Error_Handler(void);
 /* USER CODE BEGIN EFP */
 extern osEventFlagsId_t gameCtrlEventsHandle;
 extern osTimerId_t IMU_timerHandle;
+extern ADC_HandleTypeDef hadc1;
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
