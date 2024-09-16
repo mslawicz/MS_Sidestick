@@ -219,7 +219,7 @@ void gameControllerLoop(void)
         joyReport.Ry = (uint16_t)scale(0, 1.0f, brakeRight, 0, Max15bit);
         joyReport.slider = 0;
         joyReport.dial = 0;
-        joyReport.HAT = getHAT(true);
+        joyReport.HAT = getHAT(false);
         joyReport.buttons = getButtons(false);
         USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, (uint8_t*)&joyReport, sizeof(joyReport));
 
