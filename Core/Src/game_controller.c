@@ -68,6 +68,7 @@ void gameControllerLoop(void)
 
     /* IMU timer will call the first IMU readout */
     start_IMU_timer();
+    /* start the first ADC conversion set */
     HAL_ADC_Start_DMA(&hadc1, (uint32_t*)ADC_value, ADC_CH_NUMB);
     HAL_TIM_Base_Start(pStopWatch);
     previousTimerValue = pStopWatch->Instance->CNT;
@@ -238,11 +239,16 @@ void gameControllerLoop(void)
         global_y = 10000.0f * stickPosition.pitch;
         global_z = 10000.0f * stickPosition.yaw;
 
+
         if((loopCounter % 60) == 0)
         {
             /* it should be executed roughly every half a second */
             HAL_GPIO_TogglePin(LED_G_GPIO_Port, LED_G_Pin);
         }
+
+        /* start the next ADC conversion set */
+        HAL_ADC_Start_DMA(&hadc1, (uint32_t*)ADC_value, ADC_CH_NUMB);
+
         HAL_GPIO_WritePin(TEST1_GPIO_Port, TEST1_Pin, GPIO_PIN_RESET);  //XXX test
     }
 }  
