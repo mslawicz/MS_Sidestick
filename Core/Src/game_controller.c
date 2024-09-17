@@ -45,7 +45,9 @@ void gameControllerLoop(void)
     static const float IMU_G_sensitivity = 2.6632423658e-4f;     //rad/s/1 bit
     static const float IMU_A_sensitivity = 6.1037018952e-5f;     //G/1 bit
     static const float IMU_M_sensitivity = 4.882961516e-4f;      //gauss/1 bit
-    static const float PI_3 = 1.04719755f;      // PI/3 (60 deg)
+    static const float PI_4 = 0.7853981634f;   // PI/4 (45 deg)
+    static const float Deg50 = 0.872665f;      // 50 degrees in radians
+    static const float PI_3 = 1.04719755f;     // PI/3 (60 deg)
     static const float Max15bit = 32767.0f;    //max 15-bit value in float type
     uint16_t loopCounter = 0;
     int16_XYZ_t IMU_G_rawData;  // IMU gyroscope raw data
@@ -215,7 +217,7 @@ void gameControllerLoop(void)
         else
         {
             //joystick Y value is uptaded when brakes are not active only
-            joyReport.Y = (int16_t)scale(-PI_3, PI_3, stickPosition.pitch, -Max15bit, Max15bit);
+            joyReport.Y = (int16_t)scale(-PI_4, PI_4, stickPosition.pitch, -Max15bit, Max15bit);
             lastJoyReportY = joyReport.Y;
             //release brakes
             brakeLeft = brakeRight = 0.0f;
@@ -225,7 +227,7 @@ void gameControllerLoop(void)
 
         joyReport.X = (int16_t)scale(-PI_3, PI_3, stickPosition.roll, -Max15bit, Max15bit);
         joyReport.Z = 0;
-        joyReport.Rz = (int16_t)scale(-PI_3, PI_3, stickPosition.yaw, -Max15bit, Max15bit);
+        joyReport.Rz = (int16_t)scale(-Deg50, Deg50, stickPosition.yaw, -Max15bit, Max15bit);
         joyReport.Rx = (uint16_t)scale(0, 1.0f, brakeLeft, 0, Max15bit);
         joyReport.Ry = (uint16_t)scale(0, 1.0f, brakeRight, 0, Max15bit);
         joyReport.slider = 0;
@@ -304,7 +306,7 @@ uint32_t getButtons(bool HAT_active)
         buttons |= (HAL_GPIO_ReadPin(HAT_UP_GPIO_Port, HAT_UP_Pin) ^ 1) << BT_HAT_UP;
         buttons |= (HAL_GPIO_ReadPin(HAT_DOWN_GPIO_Port, HAT_DOWN_Pin) ^ 1) << BT_HAT_DOWN;
         buttons |= (HAL_GPIO_ReadPin(HAT_RIGHT_GPIO_Port, HAT_RIGHT_Pin) ^ 1) << BT_HAT_RIGHT;
-        buttons |= (HAL_GPIO_ReadPin(HAT_LEFT_GPIO_Port, HAT_LEFT_Pin) ^ 1) << BT_HAT_LEFT;        
+        buttons |= (HAL_GPIO_ReadPin(HAT_LEFT_GPIO_Port, HAT_LEFT_Pin) ^ 1) << BT_HAT_LEFT;
     }
 
     return buttons;
