@@ -219,8 +219,9 @@ void gameControllerLoop(void)
             lastJoyReportY = joyReport.Y;
             //release brakes
             brakeLeft = brakeRight = 0.0f;
-        }                                         
+        }
 
+        bool HAT_active = !HAL_GPIO_ReadPin(TOGGTLE_LEFT_GPIO_Port, TOGGTLE_LEFT_Pin);
 
         joyReport.X = (int16_t)scale(-PI_3, PI_3, stickPosition.roll, -Max15bit, Max15bit);
         joyReport.Z = 0;
@@ -229,8 +230,8 @@ void gameControllerLoop(void)
         joyReport.Ry = (uint16_t)scale(0, 1.0f, brakeRight, 0, Max15bit);
         joyReport.slider = 0;
         joyReport.dial = 0;
-        joyReport.HAT = getHAT(false);
-        joyReport.buttons = getButtons(false);
+        joyReport.HAT = getHAT(HAT_active);
+        joyReport.buttons = getButtons(HAT_active);
         USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, (uint8_t*)&joyReport, sizeof(joyReport));
 
 
