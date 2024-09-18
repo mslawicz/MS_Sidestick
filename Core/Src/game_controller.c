@@ -48,7 +48,8 @@ void gameControllerLoop(void)
     static const float PI_4 = 0.7853981634f;   // PI/4 (45 deg)
     static const float Deg50 = 0.872665f;      // 50 degrees in radians
     static const float PI_3 = 1.04719755f;     // PI/3 (60 deg)
-    static const float Max15bit = 32767.0f;    //max 15-bit value in float type
+    static const float Max12bitF = 4095.0f;    //max 12-bit value in float type
+    static const float Max15bitF = 32767.0f;    //max 15-bit value in float type
     uint16_t loopCounter = 0;
     int16_XYZ_t IMU_G_rawData;  // IMU gyroscope raw data
     int16_XYZ_t IMU_A_rawData;  // IMU accelerometer raw data
@@ -67,6 +68,7 @@ void gameControllerLoop(void)
     float brakeLeft;
     float brakeRight;
     int16_t lastJoyReportY = 0;   // store last joystick report Y value when brakes are not active
+    static float stickGain = 1.0f;      // stick gain in range 0.5 ... 1.5
 
     /* IMU timer will call the first IMU readout */
     start_IMU_timer();
@@ -202,6 +204,9 @@ void gameControllerLoop(void)
         stickPosition.pitch = sensorPositionCalibrated.pitch * cosYaw + sensorPositionCalibrated.roll * sinYaw;                             
         stickPosition.yaw = sensorPositionCalibrated.yaw;
 
+        /* filter stick gain */
+        stickGain += 0.01f * (scale(0, Max12bitF, (float)ADC_value[ADC_POT_YELLOW], 0.5f, 1.5f) - stickGain);
+
         /* calculate brakes */
         if(HAL_GPIO_ReadPin(HAT_RESET_GPIO_Port, HAT_RESET_Pin) == GPIO_PIN_RESET)
         {
@@ -217,7 +222,7 @@ void gameControllerLoop(void)
         else
         {
             //joystick Y value is uptaded when brakes are not active only
-            joyReport.Y = (int16_t)scale(-PI_4, PI_4, stickPosition.pitch, -Max15bit, Max15bit);
+            joyReport.Y = (int16_t)scale(-PI_4, PI_4, stickGain * stickPosition.pitch, -Max15bitF, Max15bitF);
             lastJoyReportY = joyReport.Y;
             //release brakes
             brakeLeft = brakeRight = 0.0f;
@@ -225,11 +230,11 @@ void gameControllerLoop(void)
 
         bool HAT_active = !HAL_GPIO_ReadPin(TOGGTLE_LEFT_GPIO_Port, TOGGTLE_LEFT_Pin);
 
-        joyReport.X = (int16_t)scale(-PI_3, PI_3, stickPosition.roll, -Max15bit, Max15bit);
+        joyReport.X = (int16_t)scale(-PI_3, PI_3, stickGain * stickPosition.roll, -Max15bitF, Max15bitF);
         joyReport.Z = 0;
-        joyReport.Rz = (int16_t)scale(-Deg50, Deg50, stickPosition.yaw, -Max15bit, Max15bit);
-        joyReport.Rx = (uint16_t)scale(0, 1.0f, brakeLeft, 0, Max15bit);
-        joyReport.Ry = (uint16_t)scale(0, 1.0f, brakeRight, 0, Max15bit);
+        joyReport.Rz = (int16_t)scale(-Deg50, Deg50, stickGain * stickPosition.yaw, -Max15bitF, Max15bitF);
+        joyReport.Rx = (uint16_t)scale(0, 1.0f, brakeLeft, 0, Max15bitF);
+        joyReport.Ry = (uint16_t)scale(0, 1.0f, brakeRight, 0, Max15bitF);
         joyReport.slider = 0;
         joyReport.dial = 0;
         joyReport.HAT = getHAT(HAT_active);
