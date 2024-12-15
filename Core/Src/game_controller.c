@@ -243,9 +243,9 @@ void gameControllerLoop(void)
 
 
         //XXX test
-        global_x = 10000.0f * stickPosition.roll;
-        global_y = 10000.0f * stickPosition.pitch;
-        global_z = 10000.0f * stickPosition.yaw;
+        global_x = 10000.0f * scale(0, Max12bitF, (float)ADC_value[ADC_POT_YELLOW], 0.5f, 1.5f);
+        global_y = 10000.0f * stickGain;
+        global_z = 10000.0f;
 
 
         if((loopCounter % 60) == 0)
