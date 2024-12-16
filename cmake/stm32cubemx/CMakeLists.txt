@@ -37,6 +37,8 @@ target_sources(stm32cubemx INTERFACE
     ../../USB_DEVICE/App/usbd_desc.c
     ../../USB_DEVICE/App/usbd_custom_hid_if.c
     ../../USB_DEVICE/Target/usbd_conf.c
+    ../../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c
+    ../../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c
     ../../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd.c
     ../../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd_ex.c
     ../../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_usb.c
@@ -58,8 +60,6 @@ target_sources(stm32cubemx INTERFACE
     ../../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_adc.c
     ../../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.c
     ../../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.c
-    ../../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c
-    ../../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c
     ../../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c
     ../../Core/Src/system_stm32f4xx.c
     ../../Middlewares/Third_Party/FreeRTOS/Source/croutine.c
